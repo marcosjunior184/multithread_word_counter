@@ -77,7 +77,13 @@ python3 -m venv .venv
 # Activate virtual environment. Then run pip on requirements.txt.
 source .venv/bin/activate
 ```
+### Updating dependencies.
 
+To update (or generate) the requirements.txt please run.
+
+```bash
+pip freeze > requirements.txt
+```
 # Usage.
 
 At this time, this script does not support stdin from the command line. Modifications on which file to read, number of threads working and number of lines per task have to be manually changed on main()
