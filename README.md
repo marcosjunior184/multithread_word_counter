@@ -1,6 +1,6 @@
 Author: Marcos da Silva Junior
 
-# Word counter.
+# Word Csounter.
 Word counter is a Python script that reads a file from the "input/" directory, counts the words and returns a report. It accomplishes it by using multithread.
 The report contains:
 
@@ -11,7 +11,7 @@ The report contains:
  - A table with 'words legth', 'Words', and 'Same length count', where words with the same length are grouped.
  - Execution time.
 
-## Report example.
+## Report Example.
 ```python
 ----------------------------Final report--------------------------------------
 
@@ -62,6 +62,22 @@ pip install wheel
 ```bash
 pip install pandas
 ```
+
+or
+
+```bash
+pip install -r requirements.txt
+```
+
+If using virtual environment
+
+```bash
+python3 -m venv .venv
+
+# Activate virtual environment. Then run pip on requirements.txt.
+source .venv/bin/activate
+```
+
 # Usage.
 
 At this time, this script does not support stdin from the command line. Modifications on which file to read, number of threads working and number of lines per task have to be manually changed on main()
@@ -78,7 +94,7 @@ multi_thread = Multi_Thread(file_path = Thus_spake_zarathustra,  <== Change file
                             lines_per_thread= 500)               <== Change num of lines per task here
 ```
 
-### Terminal usage
+### Terminal Usage.
 
 ```python
 python3 main.py
