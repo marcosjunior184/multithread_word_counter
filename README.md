@@ -1,6 +1,6 @@
 Author: Marcos da Silva Junior
 
-# Word Csounter.
+# Word Counter.
 Word counter is a Python script that reads a file from the "input/" directory, counts the words and returns a report. It accomplishes it by using multithread.
 The report contains:
 
