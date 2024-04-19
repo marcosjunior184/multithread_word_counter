@@ -1,3 +1,5 @@
+#include "Task_Queue.hpp"
+
 #include <condition_variable> 
 #include <iostream>
 #include <fstream>
@@ -11,55 +13,60 @@
 
 
 using namespace std;
-
-class Work_Queue{
-
-
-    public:
-
-    Work_Queue(){
-        task_queue_ = {};
-    }
-
-    void put(vector<std::string> task){
-        {
-        unique_lock<mutex> lock(queue_mutex_);
-        task_queue_.emplace(move(task));
-        }
-        cv_.notify_one();
-    };
+using namespace Queue;
+// class Task_Queue{
 
 
-    vector<string> get(){
-        vector<string> task;
+//     public:
+        
+//         struct _task
+//         {
+//             vector<string> task;
+//             bool is_sentinel;
+//         };
 
-        {
-            unique_lock<mutex> lock(queue_mutex_);
+//         Task_Queue(){
+//             task_queue_ = {};
+//         }
 
-            cv_.wait(lock, [this]{
-                return !task_queue_.empty();
-            });
+//         void put(_task task){
+//             {
+//             unique_lock<mutex> lock(queue_mutex_);
+//             task_queue_.emplace(move(task));
+//             }
+//             cv_.notify_one();
+//         };
 
-            task = move(task_queue_.front());
-            task_queue_.pop();
-        }
 
-        cv_.notify_one();
+//         _task get(){
+//             _task task;
 
-        return task;
+//             {
+//                 unique_lock<mutex> lock(queue_mutex_);
 
-    };
+//                 cv_.wait(lock, [this]{
+//                     return !task_queue_.empty();
+//                 });
 
-    bool empty(){
-        return task_queue_.empty();
-    }
+//                 task = move(task_queue_.front());
+//                 task_queue_.pop();
+//             }
 
-    private:
+//             cv_.notify_one();
 
-    queue<vector<std::string>> task_queue_;
-    mutex queue_mutex_;
-    condition_variable cv_;
-};
+//             return task;
+
+//         };
+
+//         bool empty(){
+//             return task_queue_.empty();
+//         }
+
+//     private:
+//         queue<_task> task_queue_;
+//         mutex queue_mutex_;
+//         condition_variable cv_;    
+// };
 
 
 class Multi_Thread{
@@ -79,7 +86,7 @@ class Multi_Thread{
     size_t num_of_threads_;
     size_t lines_per_thread_;
 
-    void producers(Work_Queue w_queue){
+    void producers(Task_Queue w_queue){
 
         fstream file;
         file.open(file_path_, ios::in);
@@ -87,16 +94,22 @@ class Multi_Thread{
         if (file.is_open()){
 
             string line;
-            vector<string> task;
+            vector<string> task_vec;
 
             while (getline(file, line)){
 
 
-                task.push_back(line);
+                task_vec.push_back(line);
 
-                if (task.size() == lines_per_thread_){
-                    w_queue.put(task);
-                    task.clear();
+                if (task_vec.size() == lines_per_thread_)
+                {
+                    Task_Queue::Task task_ {
+                        task_vec,
+                        false
+                    };
+                    
+                    w_queue.put(task_);
+                    task_vec.clear();
                 }
 
             }
@@ -104,36 +117,37 @@ class Multi_Thread{
         }
     };
 
-    void workers(Work_Queue w_queue){
+    void workers(Task_Queue w_queue){
 
         map<string, int> counter;
 
         while (true) {
 
 
-            vector<string> task = w_queue.get();
+            Task_Queue::Task task = w_queue.get();
 
-            if (task.empty()){
+            if (task._task.empty() || task.is_sentinel){
                 return;
             }
 
-            string a_str = "Test string, replace with task";
-
-            regex rgx("[\\b\\W\\b]+");
-
-            sregex_token_iterator iter(a_str.begin(), a_str.end(), rgx, -1);
-            sregex_token_iterator end;
-
             map<string, int> counter;
 
-            while (iter != end){
-                std::cout << *iter << '\n';
+            for (auto const& value : task._task)
+            {
+                regex rgx("[\\b\\W\\b]+");
 
-                counter[*iter] ++;
+                sregex_token_iterator iter(value.begin(), value.end(), rgx, -1);
+                sregex_token_iterator end;
 
-                iter ++;
+                while (iter != end){
+                    std::cout << *iter << '\n';
+
+                    counter[*iter] ++;
+
+                    iter ++;
+                }
+
             }
-
 
 
             for (auto const& entry : counter){
@@ -147,8 +161,9 @@ class Multi_Thread{
 };
 
 
-
 int main(){
+
+
 
     string a_str = "In the heart of the forest,";
 
@@ -158,15 +173,45 @@ int main(){
     vec.push_back("simple");
     vec.push_back("test");
 
+    Task_Queue::Task task {
+        vec,
+        true
+    };
 
-    for(auto const& entry : vec){
-        cout << entry;
+
+    map<string, int> cnt;
+
+
+    map<string, int> cnt1;
+
+    cnt["Hi"] ++;
+    cnt1["There"] ++;
+
+
+    for (auto const& entry : cnt){
+
+        cout << "Key " << entry.first
+            <<", Value " << entry.second << endl;
     }
+
+    // task._task = vec;
+    // task.is_sentinel = true;
+
+    // wq.put(task);
+
+    // Task_Queue::Task another_task;
+
+    // another_task = wq.get();
+
+
+    // for(auto const& entry : another_task._task){
+    //     cout << entry;
+    // }
     
     
     // fstream file;
 
-    // Work_Queue w_queue;
+    // Task_Queue w_queue;
     // vector<string> test;
     
 
