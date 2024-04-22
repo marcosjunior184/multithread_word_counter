@@ -44,8 +44,3 @@ Task_Queue::Task Task_Queue::get()
 
     return task;
 };
-
-bool Task_Queue::empty()
-{
-    return task_queue_.empty();
-}

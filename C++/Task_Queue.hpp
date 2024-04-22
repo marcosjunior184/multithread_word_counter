@@ -22,7 +22,6 @@ namespace Queue
             Task_Queue();
             void put(Task task);
             Task get();
-            bool empty();
 
         private:
             std::queue<Task> task_queue_;
