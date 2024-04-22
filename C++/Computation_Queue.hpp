@@ -26,11 +26,13 @@ namespace Computation
             Comp_Unit get();
 
         private:
-            std::queue<std::map<std::string, int>> task_queue_;
+            std::queue<Comp_Unit> task_queue_;
             std::mutex queue_mutex_;
             std::condition_variable cv_;  
 
-    }
+    };
 }
+
+#include "Computation_Queue.cpp"
 
 #endif
