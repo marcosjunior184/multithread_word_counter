@@ -16,7 +16,7 @@ namespace Computation
     {
         public:
             struct Comp_Unit{
-                std::map<std::string, int> task_;
+                std::map<std::string, int> _task;
                 bool is_sentinel;
             };
 

@@ -1,4 +1,5 @@
 #include "Task_Queue.hpp"
+#include "Computation_Queue.hpp"
 
 #include <condition_variable> 
 #include <iostream>
@@ -14,6 +15,7 @@
 
 using namespace std;
 using namespace Queue;
+using namespace Computation;
 
 class Multi_Thread{
     
@@ -26,13 +28,45 @@ class Multi_Thread{
 
 
 
+    void run()
+    {
+        Task_Queue task;
+
+        Computation_Queue comp;
+
+        producers(&task);
+
+
+
+        Task_Queue::Task terminator{
+            {},
+            true
+        };
+
+        task.put(terminator);
+        workers(&task, &comp);
+
+        Computation_Queue::Comp_Unit comp_unit; 
+
+        comp_unit = comp.get();
+
+        for(auto const& item : comp_unit._task)
+        {
+            cout << "Key: " << item.first
+                << " value: " << item.second << endl;
+        }
+    };
+
+
+
     private:
 
     string file_path_;
     size_t num_of_threads_;
     size_t lines_per_thread_;
 
-    void producers(Task_Queue w_queue){
+    void producers(Task_Queue* w_queue){
+
 
         fstream file;
         file.open(file_path_, ios::in);
@@ -41,36 +75,45 @@ class Multi_Thread{
 
             string line;
             vector<string> task_vec;
+            int string_count = 0;
 
             while (getline(file, line)){
 
-
+                string_count ++;
                 task_vec.push_back(line);
-
+                
                 if (task_vec.size() == lines_per_thread_)
                 {
                     Task_Queue::Task task_ {
-                        task_vec,
+                        move(task_vec),
                         false
                     };
-                    
-                    w_queue.put(task_);
+                    w_queue->put(task_);
                     task_vec.clear();
                 }
+
+            }
+
+            if (task_vec.size() > 0)
+            {
+                Task_Queue::Task task_ {
+                    move(task_vec),
+                    false
+                };
+                w_queue->put(task_);
+                task_vec.clear();
 
             }
             file.close();
         }
     };
 
-    void workers(Task_Queue w_queue){
+    void workers(Task_Queue* w_queue, Computation_Queue* comp_queue){
 
-        map<string, int> counter;
-
+    
         while (true) {
 
-
-            Task_Queue::Task task = w_queue.get();
+            Task_Queue::Task task = w_queue->get();
 
             if (task._task.empty() || task.is_sentinel){
                 return;
@@ -86,7 +129,6 @@ class Multi_Thread{
                 sregex_token_iterator end;
 
                 while (iter != end){
-                    std::cout << *iter << '\n';
 
                     counter[*iter] ++;
 
@@ -95,12 +137,13 @@ class Multi_Thread{
 
             }
 
+            
+            Computation_Queue::Comp_Unit unit{
+                move(counter),
+                false
+            };
 
-            for (auto const& entry : counter){
-
-                cout << "Key " << entry.first
-                    <<", Value " << entry.second << endl;
-            }
+            comp_queue->put(unit);
 
         }
     }
@@ -109,34 +152,6 @@ class Multi_Thread{
 
 int main(){
 
-
-
-    string a_str = "In the heart of the forest,";
-
-    vector<string> vec;
-
-    vec.push_back("a");
-    vec.push_back("simple");
-    vec.push_back("test");
-
-    Task_Queue::Task task {
-        vec,
-        true
-    };
-
-
-    map<string, int> cnt;
-
-
-    map<string, int> cnt1;
-
-    cnt["Hi"] ++;
-    cnt1["There"] ++;
-
-
-    for (auto const& entry : cnt){
-
-        cout << "Key " << entry.first
-            <<", Value " << entry.second << endl;
-    }
+    Multi_Thread multi_thrd("Input/Control_test_file.txt", 2, 10);
+    multi_thrd.run();
 }
