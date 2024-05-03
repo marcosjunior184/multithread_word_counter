@@ -11,7 +11,7 @@
 #include <vector>
 #include <map>
 #include <regex>
-
+#include <algorithm>
 
 using namespace std;
 using namespace Queue;
@@ -31,26 +31,40 @@ class Multi_Thread{
     void run()
     {
         Task_Queue task;
-
         Computation_Queue comp;
-
-        producers(&task);
-
-
-
-        Task_Queue::Task terminator{
+        Computation_Queue::Comp_Unit comp_unit;
+        report report_obj{
+            {},
+            {},
+            {},
+            0
+        };
+        Computation_Queue::Comp_Unit comp_terminator{
             {},
             true
         };
 
-        task.put(terminator);
+        producers(&task);
+        
+        for (int i = 0; i < num_of_threads_; i++){
+            Task_Queue::Task terminator{
+                {},
+                true
+            };
+
+            task.put(terminator);
+        }
+
         workers(&task, &comp);
 
-        Computation_Queue::Comp_Unit comp_unit; 
+        comp.put(comp_terminator);
 
-        comp_unit = comp.get();
+        compute_worker(&comp, &report_obj);
+        
+       
+    
 
-        for(auto const& item : comp_unit._task)
+        for(auto const& item : report_obj.word_report_group)
         {
             cout << "Key: " << item.first
                 << " value: " << item.second << endl;
@@ -60,6 +74,13 @@ class Multi_Thread{
 
 
     private:
+
+    struct report {
+        map<int, vector<string>> lenght_group;
+        map<int, vector<string>> count_group;
+        map<string, int> word_report_group;
+        int total_count;
+    };
 
     string file_path_;
     size_t num_of_threads_;
@@ -147,11 +168,36 @@ class Multi_Thread{
 
         }
     }
+
+
+    void compute_worker(Computation_Queue* comp_queue, report* report_object){
+
+        while(true){
+            Computation_Queue::Comp_Unit comp_task = comp_queue->get();
+
+            if (comp_task._task.empty() || comp_task.is_sentinel){
+                return;
+            }
+
+            for (auto const& task : comp_task._task){
+
+                report_object->word_report_group[task.first] += task.second;
+
+                int cntr = report_object->word_report_group[task.first];
+
+
+                vector<string>* str_vec = &report_object->count_group[cntr];
+
+                if (find(str_vec->begin(), str_vec->end(), task.first) != str_vec->end())
+                    str_vec->push_back(task.first);
+            }
+        }
+    }
 };
 
 
 int main(){
 
-    Multi_Thread multi_thrd("Input/Control_test_file.txt", 2, 10);
+    Multi_Thread multi_thrd("Input/Control_test_file.txt", 1, 10);
     multi_thrd.run();
 }
